@@ -1,6 +1,4 @@
 
-
-```markdown
 # HealthBuddy
 
 HealthBuddy is a comprehensive health monitoring and advisory platform that offers personalized insights, tools, and analytics to help users manage and improve their health.
@@ -17,7 +15,6 @@ HealthBuddy is a comprehensive health monitoring and advisory platform that offe
 - **Backend**: Supabase (to be deployed separately)
 - **Build Tools**: Vite, PostCSS
 - **Other Tools**: ESLint for code quality, Groq for data queries
-```
 
 ## 📦 Installation
 
