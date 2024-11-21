@@ -30,8 +30,7 @@ const Diabetes = () => {
     }
 
     try {
-      const response = await fetch('https://healthbuddy-backend-rouge.vercel.app/diabetes/predict
-', {
+      const response = await fetch('https://healthbuddy-backend-rouge.vercel.app/diabetes/predict', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
