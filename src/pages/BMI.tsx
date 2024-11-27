@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Scale } from "lucide-react";
 import { jsPDF } from "jspdf";
 import axios from "axios";
+import { supabase } from '../lib/supabase';  // Import supabase
 
 const ObesityPrediction = () => {
   const defaultFormData = {

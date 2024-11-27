@@ -14,7 +14,8 @@ import {
   MessageSquare,
   LogOut,
   User,
-  Waves
+  Waves,
+  Calendar
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
@@ -23,6 +24,7 @@ const Sidebar = () => {
   const menuItems = [
     { icon: LayoutDashboard, text: 'Dashboard', path: '/dashboard' },
     { icon: User, text: 'Profile', path: '/profile' },
+    { icon: Calendar, text: 'Appointments', path: '/appointments' },
     { icon: Heart, text: 'Heart Disease', path: '/heart-disease' },
     { icon: Activity, text: 'Diabetes', path: '/diabetes' },
     { icon: Brain, text: 'Stroke Risk', path: '/stroke-risk' },

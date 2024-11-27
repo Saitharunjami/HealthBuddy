@@ -8,13 +8,17 @@ import {
   User,
 } from 'lucide-react';
 import { supabase, getProfile, getLatestHealthMetrics, type Profile, type HealthMetrics } from '../lib/supabase';
+import HealthAnalytics from '../components/HealthAnalytics';
+
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [healthMetrics, setHealthMetrics] = useState<HealthMetrics | null>(null);
+  const [predictions, setPredictions] = useState<any[]>([]); // Predictions state
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
 
   const loadHealthMetrics = useCallback(async () => {
     try {
@@ -35,14 +39,33 @@ const Dashboard = () => {
     }
   }, []);
 
+  const loadPredictions = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('disease_predictions')
+        .select('disease_type, risk_level, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      setPredictions(data || []);
+    } catch (error) {
+      console.error('Error loading predictions:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadProfile(), loadHealthMetrics()]);
+      await Promise.all([loadProfile(), loadHealthMetrics(), loadPredictions()]);
       setLoading(false);
     };
     loadData();
-  }, [loadProfile, loadHealthMetrics, location.key]);
+  }, [loadProfile, loadHealthMetrics, loadPredictions, location.state?.refresh]);
 
   if (loading) {
     return (
@@ -79,11 +102,43 @@ const Dashboard = () => {
     },
   ];
 
-  const recentPredictions = [
-    { name: 'Heart Disease Risk', risk: 'Low', date: '2024-03-10' },
-    { name: 'Diabetes Risk', risk: 'Moderate', date: '2024-03-09' },
-    { name: 'Mental Health', risk: 'Good', date: '2024-03-08' },
-  ];
+  const getRiskColor = (risk: string) => {
+    switch (risk.toLowerCase()) {
+      case 'high':
+        return 'bg-red-100 text-red-800';
+      case 'moderate':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-green-100 text-green-800';
+    }
+  };
+
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'heart_disease':
+        return <Heart className="w-5 h-5 text-red-500" />;
+      case 'stroke_risk':
+        return <Brain className="w-5 h-5 text-purple-500" />;
+      case 'mental_health':
+        return <Smile className="w-5 h-5 text-yellow-500" />;
+      default:
+        return <Activity className="w-5 h-5 text-blue-500" />;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatPredictionType = (type: string) => {
+    return type.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
 
   return (
     <div className="space-y-6 pt-6">
@@ -108,6 +163,35 @@ const Dashboard = () => {
         </div>
       </div>
 
+            {/* Tabs */}
+            <div className="flex space-x-4 border-b">
+        <button
+          className={`pb-2 px-4 ${
+            activeTab === 'overview'
+              ? 'border-b-2 border-indigo-600 text-indigo-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab('overview')}
+        >
+          Overview
+        </button>
+        <button
+          className={`pb-2 px-4 ${
+            activeTab === 'analytics'
+              ? 'border-b-2 border-indigo-600 text-indigo-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          Analytics
+        </button>
+      </div>
+
+      {activeTab === 'overview' ? (
+        <>
+
+      
+
       {/* Health Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric) => (
@@ -125,42 +209,41 @@ const Dashboard = () => {
       <div className="bg-white p-6 rounded-xl shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Recent Health Predictions</h2>
         <div className="space-y-4">
-          {recentPredictions.map((prediction) => (
-            <div key={prediction.name} className="flex items-center justify-between border-b pb-4">
-              <div className="flex items-center gap-3">
-                {prediction.name.includes('Heart') ? (
-                  <Heart className="w-5 h-5 text-red-500" />
-                ) : prediction.name.includes('Mental') ? (
-                  <Brain className="w-5 h-5 text-purple-500" />
-                ) : (
-                  <Smile className="w-5 h-5 text-yellow-500" />
-                )}
-                <div>
-                  <p className="font-medium">{prediction.name}</p>
-                  <p className="text-sm text-gray-500">{prediction.date}</p>
+          {predictions.length > 0 ? (
+            predictions.map((prediction, index) => (
+              <div key={index} className="flex items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-3">
+                  {getIcon(prediction.disease_type)}
+                  <div>
+                    <p className="font-medium">{formatPredictionType(prediction.disease_type)}</p>
+                    <p className="text-sm text-gray-500">{formatDate(prediction.created_at)}</p>
+                  </div>
                 </div>
+                <span className={`px-3 py-1 rounded-full text-sm ${getRiskColor(prediction.risk_level)}`}>
+                  {prediction.risk_level} Risk
+                </span>
               </div>
-              <span className={`px-3 py-1 rounded-full text-sm ${
-                prediction.risk === 'Low' ? 'bg-green-100 text-green-800' :
-                prediction.risk === 'Moderate' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-blue-100 text-blue-800'
-              }`}>
-                {prediction.risk}
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-gray-500 text-center py-4">No predictions yet. Try our health assessment tools!</p>
+          )}
         </div>
       </div>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <button className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <h3 className="font-semibold">Schedule Check-up</h3>
+        <button 
+          onClick={() => navigate('/appointments')}
+          className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+        >
+          <h3 className="font-semibold">Schedule Checkup</h3>
           <p className="text-sm text-gray-500 mt-1">Book your next health assessment</p>
         </button>
-        <button className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
-          <h3 className="font-semibold">View Health Report</h3>
-          <p className="text-sm text-gray-500 mt-1">Download your latest health report</p>
+        <button 
+          className="p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+        >
+          <h3 className="font-semibold">Download reports</h3>
+          <p className="text-sm text-gray-500 mt-1">Download all the test reports</p>
         </button>
         <button 
           onClick={() => navigate('/chat')}
@@ -170,7 +253,12 @@ const Dashboard = () => {
           <p className="text-sm text-gray-500 mt-1">Get instant health advice</p>
         </button>
       </div>
+      </>
+      ) : (
+      <HealthAnalytics />
+      )}
     </div>
+    
   );
 };
 

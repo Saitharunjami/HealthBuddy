@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Activity } from 'lucide-react';
 import { jsPDF } from 'jspdf'; // Import jsPDF
-
+import { supabase } from '../lib/supabase'; 
 const HeartDisease = () => {
   const defaultFormData = {
     age: '45',
@@ -22,6 +22,7 @@ const HeartDisease = () => {
   const [formData, setFormData] = useState(defaultFormData);
   const [result, setResult] = useState(null);
   const [resultColor, setResultColor] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,6 +32,8 @@ const HeartDisease = () => {
         return;
       }
     }
+
+    setLoading(true);
 
     try {
       const response = await fetch('http://127.0.0.1:5000/heart_disease/predict', {
@@ -60,6 +63,20 @@ const HeartDisease = () => {
 
       setResult(data.Message);
       setResultColor(data.Message.toLowerCase() === 'heart disease detected' ? 'bg-red-500' : 'bg-green-500');
+
+         // Save prediction to the database
+         const { data: { user } } = await supabase.auth.getUser();
+         if (user) {
+           const { error } = await supabase.from('disease_predictions').insert({
+             user_id: user.id,
+             disease_type: 'heart_disease',
+             risk_level: data.Message,
+             prediction_data: formData
+           });
+   
+           if (error) throw error;
+         }
+         
     } catch (error) {
       console.error('Error during prediction:', error);
     }

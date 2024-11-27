@@ -17,6 +17,7 @@ import SleepApnea from './pages/SleepApnea';
 import Respiratory from './pages/Respiratory';
 import Hypertension from './pages/Hypertension';
 import DietFitness from './pages/DietFitness';
+import Appointments from './pages/Appointments';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -46,6 +47,7 @@ function App() {
           <Route element={isAuthenticated ? <DashboardLayout /> : <Navigate to="/login" />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/appointments" element={<Appointments />} />
             <Route path="/update-health-data" element={<UpdateHealthData />} />
             <Route path="/heart-disease" element={<HeartDisease />} />
             <Route path="/diabetes" element={<Diabetes />} />
