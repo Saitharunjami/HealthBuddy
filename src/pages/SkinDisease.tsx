@@ -5,6 +5,8 @@ const SkinDisease = () => {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>("");
   const [result, setResult] = useState<string | null>(null);
+  const [reasons, setReasons] = useState<string[] | null>(null);
+  const [preventionSteps, setPreventionSteps] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -14,6 +16,8 @@ const SkinDisease = () => {
       setImage(file);
       setPreview(URL.createObjectURL(file));
       setResult(null); // Clear any previous results
+      setReasons(null);
+      setPreventionSteps(null);
     }
   };
 
@@ -21,6 +25,8 @@ const SkinDisease = () => {
     setImage(null);
     setPreview("");
     setResult(null);
+    setReasons(null);
+    setPreventionSteps(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -35,6 +41,8 @@ const SkinDisease = () => {
 
     setLoading(true);
     setResult(null);
+    setReasons(null);
+    setPreventionSteps(null);
 
     const formData = new FormData();
     formData.append("file", image);
@@ -46,7 +54,9 @@ const SkinDisease = () => {
       });
       const data = await response.json();
       if (response.ok) {
-        setResult(`Predicted Disease: ${data.predicted_class} (${data.confidence})`);
+        setResult(`Predicted Disease: ${data.predicted_class}`);
+        setReasons(data.reasons);
+        setPreventionSteps(data.prevention_steps);
       } else {
         setResult(`Error: ${data.error}`);
       }
@@ -122,6 +132,30 @@ const SkinDisease = () => {
         {result && (
           <div className="mt-6 p-4 bg-green-100 text-green-800 rounded-lg text-center">
             {result}
+          </div>
+        )}
+
+        {/* Display Reasons */}
+        {reasons && (
+          <div className="mt-6 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
+            <h2 className="font-semibold text-lg">Possible Reasons:</h2>
+            <ul className="list-disc ml-6 mt-2">
+              {reasons.map((reason, index) => (
+                <li key={index}>{reason}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Display Prevention Steps */}
+        {preventionSteps && (
+          <div className="mt-6 p-4 bg-blue-100 text-blue-800 rounded-lg">
+            <h2 className="font-semibold text-lg">Prevention Steps:</h2>
+            <ul className="list-disc ml-6 mt-2">
+              {preventionSteps.map((step, index) => (
+                <li key={index}>{step}</li>
+              ))}
+            </ul>
           </div>
         )}
       </div>
